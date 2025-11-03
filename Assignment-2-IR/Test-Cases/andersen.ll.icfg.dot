@@ -1,0 +1,41 @@
+digraph "ICFG" {
+	label="ICFG";
+
+	Node0x59c2a72f1500 [shape=record,color=purple,label="{GlobalICFGNode0\nCopyStmt: [Var1 \<-- Var0]  \nConstNullPtrValVar ID: 0\n ptr null \{ constant data \}\nAddrStmt: [Var20 \<-- Var21]  \nConstIntValVar ID: 20\n i32 0 \{ constant data \}\nAddrStmt: [Var9 \<-- Var10]  \nConstIntValVar ID: 9\n i32 1 \{ constant data \}\nAddrStmt: [Var4 \<-- Var5]  \nFunValVar ID: 4\nmain}"];
+	Node0x59c2a72f1500 -> Node0x59c2a7317320[style=solid];
+	Node0x59c2a7317320 [shape=record,color=yellow,label="{FunEntryICFGNode1 \{fun: main\}}"];
+	Node0x59c2a7317320 -> Node0x59c2a72da8b0[style=solid];
+	Node0x59c2a73321e0 [shape=record,color=green,label="{FunExitICFGNode2 \{fun: main\}\nPhiStmt: [Var6 \<-- ([Var20, ICFGNode18],)]  \nValVar ID: 31\n   ret i32 0 }"];
+	Node0x59c2a72da8b0 [shape=record,color=black,label="{IntraICFGNode3 \{fun: main\}\nAddrStmt: [Var7 \<-- Var8]  \nValVar ID: 7\n   %s = alloca %struct.S, align 8 }"];
+	Node0x59c2a72da8b0 -> Node0x59c2a7307570[style=solid];
+	Node0x59c2a7307570 [shape=record,color=black,label="{IntraICFGNode4 \{fun: main\}\nAddrStmt: [Var11 \<-- Var12]  \nValVar ID: 11\n   %a1 = alloca i32, align 4 }"];
+	Node0x59c2a7307570 -> Node0x59c2a72ff990[style=solid];
+	Node0x59c2a72ff990 [shape=record,color=black,label="{IntraICFGNode5 \{fun: main\}\nAddrStmt: [Var13 \<-- Var14]  \nValVar ID: 13\n   %a2 = alloca i32, align 4 }"];
+	Node0x59c2a72ff990 -> Node0x59c2a7301a50[style=solid];
+	Node0x59c2a7301a50 [shape=record,color=black,label="{IntraICFGNode6 \{fun: main\}\nAddrStmt: [Var15 \<-- Var16]  \nValVar ID: 15\n   %p = alloca ptr, align 8 }"];
+	Node0x59c2a7301a50 -> Node0x59c2a7308f30[style=solid];
+	Node0x59c2a7308f30 [shape=record,color=black,label="{IntraICFGNode7 \{fun: main\}\nAddrStmt: [Var17 \<-- Var18]  \nValVar ID: 17\n   %q = alloca ptr, align 8 }"];
+	Node0x59c2a7308f30 -> Node0x59c2a73050c0[style=solid];
+	Node0x59c2a73050c0 [shape=record,color=black,label="{IntraICFGNode8 \{fun: main\}\nGepStmt: [Var19 \<-- Var7]  \nValVar ID: 19\n   %f1 = getelementptr inbounds %struct.S, ptr %s, i32 0, i32 0 }"];
+	Node0x59c2a73050c0 -> Node0x59c2a7305230[style=solid];
+	Node0x59c2a7305230 [shape=record,color=black,label="{IntraICFGNode9 \{fun: main\}\nStoreStmt: [Var19 \<-- Var11]  \nValVar ID: 22\n   store ptr %a1, ptr %f1, align 8 }"];
+	Node0x59c2a7305230 -> Node0x59c2a73053a0[style=solid];
+	Node0x59c2a73053a0 [shape=record,color=black,label="{IntraICFGNode10 \{fun: main\}\nGepStmt: [Var23 \<-- Var7]  \nValVar ID: 23\n   %f2 = getelementptr inbounds %struct.S, ptr %s, i32 0, i32 1 }"];
+	Node0x59c2a73053a0 -> Node0x59c2a73059e0[style=solid];
+	Node0x59c2a73059e0 [shape=record,color=black,label="{IntraICFGNode11 \{fun: main\}\nStoreStmt: [Var23 \<-- Var13]  \nValVar ID: 24\n   store ptr %a2, ptr %f2, align 8 }"];
+	Node0x59c2a73059e0 -> Node0x59c2a72c9c50[style=solid];
+	Node0x59c2a72c9c50 [shape=record,color=black,label="{IntraICFGNode12 \{fun: main\}\nGepStmt: [Var25 \<-- Var7]  \nValVar ID: 25\n   %f11 = getelementptr inbounds %struct.S, ptr %s, i32 0, i32 0 }"];
+	Node0x59c2a72c9c50 -> Node0x59c2a72e6910[style=solid];
+	Node0x59c2a72e6910 [shape=record,color=black,label="{IntraICFGNode13 \{fun: main\}\nLoadStmt: [Var26 \<-- Var25]  \nValVar ID: 26\n   %0 = load ptr, ptr %f11, align 8 }"];
+	Node0x59c2a72e6910 -> Node0x59c2a72da340[style=solid];
+	Node0x59c2a72da340 [shape=record,color=black,label="{IntraICFGNode14 \{fun: main\}\nStoreStmt: [Var15 \<-- Var26]  \nValVar ID: 27\n   store ptr %0, ptr %p, align 8 }"];
+	Node0x59c2a72da340 -> Node0x59c2a72cfb60[style=solid];
+	Node0x59c2a72cfb60 [shape=record,color=black,label="{IntraICFGNode15 \{fun: main\}\nGepStmt: [Var28 \<-- Var7]  \nValVar ID: 28\n   %f22 = getelementptr inbounds %struct.S, ptr %s, i32 0, i32 1 }"];
+	Node0x59c2a72cfb60 -> Node0x59c2a72e7260[style=solid];
+	Node0x59c2a72e7260 [shape=record,color=black,label="{IntraICFGNode16 \{fun: main\}\nLoadStmt: [Var29 \<-- Var28]  \nValVar ID: 29\n   %1 = load ptr, ptr %f22, align 8 }"];
+	Node0x59c2a72e7260 -> Node0x59c2a72c5bd0[style=solid];
+	Node0x59c2a72c5bd0 [shape=record,color=black,label="{IntraICFGNode17 \{fun: main\}\nStoreStmt: [Var17 \<-- Var29]  \nValVar ID: 30\n   store ptr %1, ptr %q, align 8 }"];
+	Node0x59c2a72c5bd0 -> Node0x59c2a72e4f30[style=solid];
+	Node0x59c2a72e4f30 [shape=record,color=black,label="{IntraICFGNode18 \{fun: main\}\n   ret i32 0 }"];
+	Node0x59c2a72e4f30 -> Node0x59c2a73321e0[style=solid];
+}
