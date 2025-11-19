@@ -1,3 +1,19 @@
-cmake-build-debug/
+# Build directory
 build/
+# Executables
+Assignment-2-IR/svfir
+Assignment-3-CGCFG/cfga
+
+Assignment-4-CFLR/cflr
+# Test outputs
+*.dot
+*.res.txt
+*.new
+*.ll
+# System files
+.DS_Store
+.vscode/
+
 .idea/
+*.swp
+

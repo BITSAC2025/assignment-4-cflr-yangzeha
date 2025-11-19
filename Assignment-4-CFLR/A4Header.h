@@ -172,13 +172,6 @@ public:
     void solve();
     /// Dump results into a file
     void dumpResult();
-private:
-    /// 处理一元规则
-    void processUnaryRules(const CFLREdge& edge);
-    /// 处理二元规则  
-    void processBinaryRules(const CFLREdge& edge);
-    /// 添加新边到图和worklist
-    void addNewEdge(unsigned src, unsigned dst, EdgeLabel label);
 };
 
 #endif //ANSWERS_A4HEADER_H

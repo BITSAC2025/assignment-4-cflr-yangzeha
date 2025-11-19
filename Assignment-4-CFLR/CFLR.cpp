@@ -31,218 +31,151 @@ int main(int argc, char **argv)
     return 0;
 }
 
-
-// CFLR.cpp - 补全solve函数
-
 void CFLR::solve()
 {
-    // 初始化worklist，将所有初始边加入
-    for (auto& srcItr : graph->getSuccessorMap()) {
-        unsigned src = srcItr.first;
-        for (auto& lblItr : srcItr.second) {
-            EdgeLabel label = lblItr.first;
-            for (auto dst : lblItr.second) {
-                workList.push(CFLREdge(src, dst, label));
+    // Helper函数：添加边如果不存在
+    auto addEdgeIfAbsent = [&](unsigned src, unsigned dst, EdgeLabel label) {
+        if (!graph->hasEdge(src, dst, label))
+        {
+            graph->addEdge(src, dst, label);
+            workList.push(CFLREdge(src, dst, label));
+        }
+    };
+    
+    // Step 1: 收集所有初始边和节点
+    std::unordered_set<unsigned> nodes;
+    std::vector<CFLREdge> initialEdges;
+    
+    auto &succMap = graph->getSuccessorMap();
+    for (auto &[src, labelMap] : succMap)
+    {
+        nodes.insert(src);
+        for (auto &[label, dstSet] : labelMap)
+        {
+            for (unsigned dst : dstSet)
+            {
+                nodes.insert(dst);
+                initialEdges.push_back(CFLREdge(src, dst, label));
             }
         }
     }
-
-    // 主循环：处理worklist直到为空
-    while (!workList.empty()) {
+    
+    // Step 2: 将初始边加入worklist
+    for (const auto &edge : initialEdges)
+    {
+        workList.push(edge);
+    }
+    
+    // Step 3: 添加epsilon边 (VF ::= ε, VFBar ::= ε, VA ::= ε)
+    for (unsigned node : nodes)
+    {
+        addEdgeIfAbsent(node, node, EdgeLabelType::VF);
+        addEdgeIfAbsent(node, node, EdgeLabelType::VFBar);
+        addEdgeIfAbsent(node, node, EdgeLabelType::VA);
+    }
+    
+    // Step 4: 定义产生式规则
+    // 单符号规则
+    std::unordered_map<EdgeLabel, std::vector<EdgeLabel>> unaryRules{
+        {EdgeLabelType::Copy,    {EdgeLabelType::VF}},
+        {EdgeLabelType::CopyBar, {EdgeLabelType::VFBar}},
+    };
+    
+    // 二元规则: result ::= left right
+    std::vector<std::tuple<EdgeLabel, EdgeLabel, EdgeLabel>> binaryRules = {
+        // PT rules
+        {EdgeLabelType::PT,     EdgeLabelType::VFBar,   EdgeLabelType::AddrBar},
+        {EdgeLabelType::PTBar,  EdgeLabelType::Addr,    EdgeLabelType::VF},
+        
+        // VF rules
+        {EdgeLabelType::VF,     EdgeLabelType::VF,      EdgeLabelType::VF},
+        {EdgeLabelType::VF,     EdgeLabelType::SV,      EdgeLabelType::Load},
+        {EdgeLabelType::VF,     EdgeLabelType::PV,      EdgeLabelType::Load},
+        {EdgeLabelType::VF,     EdgeLabelType::Store,   EdgeLabelType::VP},
+        
+        // VFBar rules
+        {EdgeLabelType::VFBar,  EdgeLabelType::VFBar,   EdgeLabelType::VFBar},
+        {EdgeLabelType::VFBar,  EdgeLabelType::LoadBar, EdgeLabelType::SV},
+        {EdgeLabelType::VFBar,  EdgeLabelType::LoadBar, EdgeLabelType::VP},
+        {EdgeLabelType::VFBar,  EdgeLabelType::PV,      EdgeLabelType::StoreBar},
+        
+        // VA rules
+        {EdgeLabelType::VA,     EdgeLabelType::LV,      EdgeLabelType::Load},
+        {EdgeLabelType::VA,     EdgeLabelType::VFBar,   EdgeLabelType::VA},
+        {EdgeLabelType::VA,     EdgeLabelType::VA,      EdgeLabelType::VF},
+        
+        // SV and SVBar rules
+        {EdgeLabelType::SV,     EdgeLabelType::Store,   EdgeLabelType::VA},
+        {EdgeLabelType::SVBar,  EdgeLabelType::VA,      EdgeLabelType::StoreBar},
+        
+        // PV and VP rules
+        {EdgeLabelType::PV,     EdgeLabelType::PTBar,   EdgeLabelType::VA},
+        {EdgeLabelType::VP,     EdgeLabelType::VA,      EdgeLabelType::PT},
+        
+        // LV rules
+        {EdgeLabelType::LV,     EdgeLabelType::LoadBar, EdgeLabelType::VA},
+    };
+    
+    // 构建查找表
+    std::unordered_map<EdgeLabel, std::vector<std::pair<EdgeLabel, EdgeLabel>>> leftRules;
+    std::unordered_map<EdgeLabel, std::vector<std::pair<EdgeLabel, EdgeLabel>>> rightRules;
+    
+    for (const auto &[result, left, right] : binaryRules)
+    {
+        leftRules[left].emplace_back(result, right);
+        rightRules[right].emplace_back(result, left);
+    }
+    
+    // Step 5: 主循环 - CFL-Reachability算法
+    while (!workList.empty())
+    {
         CFLREdge edge = workList.pop();
         
-        // 处理一元规则
-        processUnaryRules(edge);
+        // 应用单符号规则
+        if (auto it = unaryRules.find(edge.label); it != unaryRules.end())
+        {
+            for (EdgeLabel result : it->second)
+            {
+                addEdgeIfAbsent(edge.src, edge.dst, result);
+            }
+        }
         
-        // 处理二元规则
-        processBinaryRules(edge);
-    }
-}
-
-void CFLR::processUnaryRules(const CFLREdge& edge)
-{
-    // 规则1: PT -> Addr
-    if (edge.label == Addr) {
-        addNewEdge(edge.src, edge.dst, PT);
-    }
-    
-    // 规则2: SV -> Load
-    if (edge.label == Load) {
-        addNewEdge(edge.src, edge.dst, SV);
-    }
-    
-    // 规则3: PV -> Store  
-    if (edge.label == Store) {
-        addNewEdge(edge.src, edge.dst, PV);
-    }
-    
-    // 规则4: VP -> StoreBar
-    if (edge.label == StoreBar) {
-        addNewEdge(edge.src, edge.dst, VP);
-    }
-    
-    // 规则5: VF -> LoadBar
-    if (edge.label == LoadBar) {
-        addNewEdge(edge.src, edge.dst, VF);
-    }
-    
-    // 规则6: VA -> AddrBar
-    if (edge.label == AddrBar) {
-        addNewEdge(edge.src, edge.dst, VA);
-    }
-    
-    // 规则7: LV -> CopyBar
-    if (edge.label == CopyBar) {
-        addNewEdge(edge.src, edge.dst, LV);
-    }
-}
-
-void CFLR::processBinaryRules(const CFLREdge& edge)
-{
-    // 获取前驱和后继映射以便快速查找
-    auto& predMap = graph->getPredecessorMap();
-    auto& succMap = graph->getSuccessorMap();
-    
-    // 规则8: PT -> Copy PT
-    if (edge.label == Copy) {
-        for (auto& ptEdge : succMap[edge.dst]) {
-            if (ptEdge.first == PT) {
-                for (auto k : ptEdge.second) {
-                    addNewEdge(edge.src, k, PT);
+        // 应用二元规则（当前边作为左边）
+        if (auto it = leftRules.find(edge.label); it != leftRules.end())
+        {
+            auto &succMap = graph->getSuccessorMap();
+            if (succMap.find(edge.dst) != succMap.end())
+            {
+                for (const auto &[result, rightLabel] : it->second)
+                {
+                    if (succMap[edge.dst].find(rightLabel) != succMap[edge.dst].end())
+                    {
+                        for (unsigned next : succMap[edge.dst][rightLabel])
+                        {
+                            addEdgeIfAbsent(edge.src, next, result);
+                        }
+                    }
                 }
             }
         }
-    }
-    
-    // 规则9: PT -> PT Copy
-    if (edge.label == PT) {
-        for (auto& copyEdge : succMap[edge.dst]) {
-            if (copyEdge.first == Copy) {
-                for (auto k : copyEdge.second) {
-                    addNewEdge(edge.src, k, PT);
+        
+        // 应用二元规则（当前边作为右边）
+        if (auto it = rightRules.find(edge.label); it != rightRules.end())
+        {
+            auto &predMap = graph->getPredecessorMap();
+            if (predMap.find(edge.src) != predMap.end())
+            {
+                for (const auto &[result, leftLabel] : it->second)
+                {
+                    if (predMap[edge.src].find(leftLabel) != predMap[edge.src].end())
+                    {
+                        for (unsigned prev : predMap[edge.src][leftLabel])
+                        {
+                            addEdgeIfAbsent(prev, edge.dst, result);
+                        }
+                    }
                 }
             }
         }
-    }
-    
-    // 规则10: PT -> SV PT
-    if (edge.label == SV) {
-        for (auto& ptEdge : succMap[edge.dst]) {
-            if (ptEdge.first == PT) {
-                for (auto k : ptEdge.second) {
-                    addNewEdge(edge.src, k, PT);
-                }
-            }
-        }
-    }
-    
-    // 规则11: PT -> PT PV
-    if (edge.label == PT) {
-        for (auto& pvEdge : succMap[edge.dst]) {
-            if (pvEdge.first == PV) {
-                for (auto k : pvEdge.second) {
-                    addNewEdge(edge.src, k, PT);
-                }
-            }
-        }
-    }
-    
-    // 规则12: PT -> VP PT
-    if (edge.label == VP) {
-        for (auto& ptEdge : succMap[edge.dst]) {
-            if (ptEdge.first == PT) {
-                for (auto k : ptEdge.second) {
-                    addNewEdge(edge.src, k, PT);
-                }
-            }
-        }
-    }
-    
-    // 规则13: PT -> PT VF
-    if (edge.label == PT) {
-        for (auto& vfEdge : succMap[edge.dst]) {
-            if (vfEdge.first == VF) {
-                for (auto k : vfEdge.second) {
-                    addNewEdge(edge.src, k, PT);
-                }
-            }
-        }
-    }
-    
-    // 规则14: SV -> Load PT
-    if (edge.label == Load) {
-        for (auto& ptEdge : succMap[edge.dst]) {
-            if (ptEdge.first == PT) {
-                for (auto k : ptEdge.second) {
-                    addNewEdge(edge.src, k, SV);
-                }
-            }
-        }
-    }
-    
-    // 规则15: PV -> PT Store
-    if (edge.label == PT) {
-        for (auto& storeEdge : succMap[edge.dst]) {
-            if (storeEdge.first == Store) {
-                for (auto k : storeEdge.second) {
-                    addNewEdge(edge.src, k, PV);
-                }
-            }
-        }
-    }
-    
-    // 规则16: VP -> StoreBar PT
-    if (edge.label == StoreBar) {
-        for (auto& ptEdge : succMap[edge.dst]) {
-            if (ptEdge.first == PT) {
-                for (auto k : ptEdge.second) {
-                    addNewEdge(edge.src, k, VP);
-                }
-            }
-        }
-    }
-    
-    // 规则17: VF -> PT LoadBar
-    if (edge.label == PT) {
-        for (auto& loadBarEdge : succMap[edge.dst]) {
-            if (loadBarEdge.first == LoadBar) {
-                for (auto k : loadBarEdge.second) {
-                    addNewEdge(edge.src, k, VF);
-                }
-            }
-        }
-    }
-    
-    // 规则18: VA -> PT AddrBar
-    if (edge.label == PT) {
-        for (auto& addrBarEdge : succMap[edge.dst]) {
-            if (addrBarEdge.first == AddrBar) {
-                for (auto k : addrBarEdge.second) {
-                    addNewEdge(edge.src, k, VA);
-                }
-            }
-        }
-    }
-    
-    // 规则19: LV -> PT CopyBar
-    if (edge.label == PT) {
-        for (auto& copyBarEdge : succMap[edge.dst]) {
-            if (copyBarEdge.first == CopyBar) {
-                for (auto k : copyBarEdge.second) {
-                    addNewEdge(edge.src, k, LV);
-                }
-            }
-        }
-    }
-}
-
-void CFLR::addNewEdge(unsigned src, unsigned dst, EdgeLabel label)
-{
-    // 检查边是否已存在
-    if (!graph->hasEdge(src, dst, label)) {
-        // 添加新边到图
-        graph->addEdge(src, dst, label);
-        // 将新边加入worklist继续处理
-        workList.push(CFLREdge(src, dst, label));
     }
 }
